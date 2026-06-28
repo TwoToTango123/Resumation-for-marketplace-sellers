@@ -1,0 +1,21 @@
+# Секреты
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# База данных
+*.sqlite3
+*.db
+
+# IDE
+.idea/
+.vscode/
+
+# Логи
+*.log
