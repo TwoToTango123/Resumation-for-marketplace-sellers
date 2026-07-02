@@ -15,15 +15,20 @@ def print_feedback(feedback: dict) -> None:
     print(f'ID: {feedback['id']}')
     print(f'Name: {feedback['productDetails']['productName']}')
     print(f'Rating: {'⭐' * (feedback['productValuation'])}')
-    date = datetime.fromisoformat("2026-06-27T10:00:00Z".replace("Z", "+00:00"))
+    date = datetime.fromisoformat(feedback['createdDate'].replace('Z', '+00:00'))
     formatted = date.strftime("%d.%m.%Y")
     print(f'Date: {formatted}')
     print(f'Text: {feedback['text']}')
     print('-' * 40)
 
 def main():
+    from db.crud import save_feedbacks
+
     feedbacks = get_unanswered_feedbacks()
     print(f"Найдено отзывов без ответа: {len(feedbacks)}\n")
+
+    saved = save_feedbacks(feedbacks)
+    print(f"Сохранено новых отзывов: {saved}")
 
     for feedback in feedbacks:
         print_feedback(feedback)

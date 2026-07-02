@@ -1,14 +1,12 @@
-"""Подключение к базе данных и сессии."""
-
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
+import os
+from dotenv import load_dotenv
 
-from config import DATABASE_URL
+load_dotenv()
 
-engine = create_engine(DATABASE_URL, echo=False)
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-
-def init_db() -> None:
-    # TODO: создать таблицы (Base.metadata.create_all)
-    raise NotImplementedError
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind = engine)
+Base = declarative_base()
