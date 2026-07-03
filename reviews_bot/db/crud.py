@@ -1,5 +1,5 @@
 from db.database import SessionLocal
-from db.models import Review
+from db.models import Review, Response
 from datetime import datetime
 
 def save_feedbacks(feedbacks: list[dict]) -> int:
@@ -33,3 +33,46 @@ def save_feedbacks(feedbacks: list[dict]) -> int:
         return saved_count
     finally:
         session.close()
+
+def get_new_reviews() -> list[Review]:
+    """
+    Возвращает все отзывы со status = 'new'
+    """
+    session = SessionLocal()
+    try:
+        new_reviews = session.query(Review).filter(Review.status == 'new').all()
+        return new_reviews
+    finally:
+        session.close()
+
+def save_response(review_id: int, ai_result: dict) -> None:
+    """
+    Сохраняет ответ AI в таблицу responses
+    """
+    session = SessionLocal()
+    try:
+        response = Response(
+            review_id = review_id,
+            sentiment = ai_result["sentiment"],
+            suggested_reply = ai_result["suggested_reply"],
+            needs_human = ai_result["needs_human"],
+            is_published = False,
+        )
+        session.add(response)
+        session.commit()
+    finally:
+        session.close()
+
+def mark_processed(review_id: int) -> None:
+    """
+    Меняет статус отзыва на 'processed'
+    """
+    session = SessionLocal()
+    try:
+        review = session.query(Review).filter(Review.id == review_id).first()
+        if review:
+            review.status = 'processed'
+            session.commit()
+    finally:
+        session.close()
+

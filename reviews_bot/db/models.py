@@ -20,3 +20,4 @@ class Response(Base):
     sentiment = Column(String, nullable = False)
     suggested_reply = Column(Text)
     needs_human = Column(Boolean, nullable = False)
+    is_published = Column(Boolean, nullable = False, default = False)
