@@ -76,3 +76,15 @@ def mark_processed(review_id: int) -> None:
     finally:
         session.close()
 
+def get_pending_responses() -> list:
+    """
+    Возвращает пары (Review, Response) где response.is_published == False.
+    """
+    session = SessionLocal()
+    try:
+        results = (
+            session.query(Review, Response).join(Response, Response.review_id == Review.id).filter(Response.is_published == False).all()
+        )
+        return results
+    finally:
+        session.close()
