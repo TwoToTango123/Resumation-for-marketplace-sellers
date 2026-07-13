@@ -55,8 +55,7 @@ def save_response(review_id: int, ai_result: dict) -> None:
             review_id = review_id,
             sentiment = ai_result["sentiment"],
             suggested_reply = ai_result["suggested_reply"],
-            needs_human = ai_result["needs_human"],
-            is_published = False,
+            needs_human = ai_result["needs_human"]
         )
         session.add(response)
         session.commit()
@@ -78,13 +77,47 @@ def mark_processed(review_id: int) -> None:
 
 def get_pending_responses() -> list:
     """
-    Возвращает пары (Review, Response) где response.is_published == False.
+    Возвращает пары (Review, Response) где response.status == 'pending'.
     """
     session = SessionLocal()
     try:
         results = (
-            session.query(Review, Response).join(Response, Response.review_id == Review.id).filter(Response.is_published == False).all()
+            session.query(Review, Response).join(Response, Response.review_id == Review.id).filter(Response.status == "pending").all()
         )
         return results
+    finally:
+        session.close()
+
+def set_status(review_id: int, status: str) -> None:
+    """
+    Универсальная замена mark_published - ставит любой статус.
+    """
+    session = SessionLocal()
+    try:
+        response = session.query(Response).filter(Response.review_id == review_id).first()
+        if response:
+            response.status = status
+            session.commit()
+    finally:
+        session.close()
+
+def get_publish_data(review_id: int) -> tuple[str, str] | None:
+    """
+    Возвращает (external_id, suggested_reply) для отзыва.
+    Если данных нет - возвращает None.
+    Одним запросом с join - не два обращения к БД.
+    """
+    session = SessionLocal()
+    try:
+        result = (
+            session.query(Review.external_id, Response.suggested_reply)
+            .join(Response, Response.review_id == Review.id)
+            .filter(Review.id == review_id)
+            .first()
+        )
+        if result:
+            return (result.external_id, result.suggested_reply)
+        else:
+            return None
     finally:
         session.close()
