@@ -17,7 +17,20 @@ def analyze_feedback(feedback: dict) -> dict:
     - needs_human: True / False
     """
 
-    system_prompt = """Ты - помощник по анализу отзывов. Отвечай на отзывы вежливо и по-человечески. Твоя задача определить тональность отзыва (положительная, отрицательная или нейтральная), а также предложить готовый ответ на отзыв. Если отзыв содержит оскорбления, угрозы или нецензурную лексику, то в поле suggested_reply нужно написать "Отзыв содержит оскорбления или угрозы, требуется вмешательство человека", а в поле needs_human нужно поставить True. В противном случае, в поле needs_human нужно поставить False. Ответ должен быть в формате JSON с ключами: sentiment, suggested_reply, needs_human. Пример ответа: {"sentiment": "positive", "suggested_reply": "Спасибо за ваш отзыв!", "needs_human": false}"""
+    system_prompt = """Ты - помощник по анализу отзывов. 
+    Отвечай на отзывы вежливо и по-человечески. 
+    Твоя задача определить тональность отзыва 
+    (положительная, отрицательная или нейтральная), 
+    а также предложить готовый ответ на отзыв. 
+    Если отзыв содержит оскорбления, угрозы, нецензурную лексику, 
+    требование воврата или денег, жалобы о вреде здоровью,
+    или если отзыв явно негативный и требует вмешательства человека,
+    в поле needs_human нужно поставить True. В противном случае, 
+    в поле needs_human нужно поставить False. 
+    Ответ должен быть в формате JSON с ключами: 
+    sentiment, suggested_reply, needs_human. 
+    Пример ответа: {"sentiment": "positive", "suggested_reply": 
+    "Спасибо за ваш отзыв!", "needs_human": false}"""
 
     user_prompt = f"""Товар: {feedback['productDetails']['productName']}
     Оценка: {feedback['productValuation']} из 5
@@ -66,7 +79,7 @@ def analyze_feedback(feedback: dict) -> dict:
 def main():
     from collector.mock_data import MOCK_FEEDBACKS
 
-    for feedback in MOCK_FEEDBACKS[:3]:
+    for feedback in MOCK_FEEDBACKS:
         print(f"Анализирую {feedback["id"]}")
         result = analyze_feedback(feedback)
         print(f"Тональность: {result['sentiment']}")

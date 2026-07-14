@@ -1,7 +1,7 @@
 from collector.wb_collector import get_unanswered_feedbacks
 from db.crud import save_feedbacks, get_new_reviews, save_response, mark_processed
 from ai.generator import analyze_feedback
-
+from bot.notifier import notify_new_responses
 
 def run_pipeline():
     print("─" * 40)
@@ -17,6 +17,7 @@ def run_pipeline():
     print(f"К обработке: {len(new_reviews)}")
 
     # 3. Каждый через AI → сохранить ответ → сменить статус
+    to_notify = []
     for review in new_reviews:
         # ВНИМАНИЕ: analyze_feedback ждёт dict в формате WB,
         # а у тебя объект Review из БД.
@@ -29,7 +30,10 @@ def run_pipeline():
         result = analyze_feedback(feedback_dict)
         save_response(review.id, result)
         mark_processed(review.id)
+        to_notify.append((review, result["suggested_reply"], result["needs_human"]))
         print(f"Обработан {review.external_id}: {result['sentiment']}")
+    
+    notify_new_responses(to_notify)
 
     print("Конвейер завершён")
 

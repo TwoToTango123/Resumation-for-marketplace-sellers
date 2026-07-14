@@ -3,6 +3,7 @@ from aiogram.filters import Command
 from aiogram import Router, F
 from db.crud import get_pending_responses, set_status, get_publish_data
 from publisher.wb_publisher import publish_reply
+from bot.ui import format_review_card, moderation_keyboard
 import asyncio
 
 router = Router()
@@ -14,17 +15,8 @@ async def cmd_pending(message):
         await message.answer("Все отзывы отработаны")
     else:
         for review, response in responses:
-            text = (f"Отзыв на: {review.product_name}\n"
-                    f"Оценка: {review.rating}/5\n"
-                    f"{review.text}\n"
-                    f"Предлагаемый ответ:\n{response.suggested_reply}")
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [
-                    InlineKeyboardButton(text="Опубликовать", callback_data=f"publish:{response.review_id}"),
-                    InlineKeyboardButton(text="Пропустить", callback_data=f"skip:{response.review_id}"),
-                ]
-            ])
-
+            text = format_review_card(review, response.suggested_reply, response.needs_human)
+            keyboard = moderation_keyboard(review.id)
             await message.answer(text, reply_markup=keyboard)
 
 @router.callback_query(F.data.startswith("publish:"))

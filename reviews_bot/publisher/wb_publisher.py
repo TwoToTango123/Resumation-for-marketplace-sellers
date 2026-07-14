@@ -9,8 +9,8 @@ def publish_reply(external_id: str, text: str) -> bool:
     asyncio.to_thread(), иначе повесишь event loop.
     """
     try:
-         print(f"Публикую ответ на отзыв {external_id}: {text}")
-         return True
+        print(f"Публикую ответ на отзыв {external_id}: {text}")
+        return True
     except Exception as e:
-         print(f"Ошибка публикации: {e}")
-         return False
+        print(f"Ошибка публикации: {e}")
+        return False
