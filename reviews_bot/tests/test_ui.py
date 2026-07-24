@@ -22,7 +22,7 @@ from bot.ui import format_review_card, moderation_keyboard
 def fake_review():
     return SimpleNamespace(
         product_name="Кроссовки",
-        rating=2,
+        rating=5,
         text="Отличный товар",
     )
 
@@ -37,7 +37,7 @@ def test_card_contains_review_fields():
     # assert — сердце теста. Если условие ложно, тест падает и показывает, что не так.
     # Проверяем, что каждый кусок данных реально попал в текст.
     assert "Кроссовки" in card
-    assert "2/5" in card
+    assert "5/5" in card
     assert "Отличный товар" in card
     assert "Спасибо!" in card
 
@@ -75,9 +75,13 @@ def test_keyboard_callback_data_format():
     assert skip_btn.callback_data == "skip:42"
 
 def test_rating_format_is_correct():
-    """Рейтинг должен быть в формате 'X/5'."""
-    card = format_review_card(fake_review(), suggested_reply="Ответ", needs_human=False)
-    assert "2/5" in card
+    """Рейтинг подставляется в формате 'X/5' — проверяем на СВОЁМ входе.
+    Тест не опирается на fake_review(): сам задаёт rating=3, поэтому
+    не сломается, если кто-то поменяет дефолт в общем хелпере."""
+    review = SimpleNamespace(product_name="Т", rating=3, text="текст")
+    card = format_review_card(review, suggested_reply="Ответ", needs_human=False)
+    assert "3/5" in card       # нужное — есть
+    assert "5/5" not in card   # лишнего — нет
 
 def test_keyboard_has_two_buttons_in_one_row():
     """Клавиатура должна содержать две кнопки в одном ряду."""
