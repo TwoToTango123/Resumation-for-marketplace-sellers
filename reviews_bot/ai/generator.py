@@ -56,7 +56,15 @@ def analyze_feedback(feedback: dict) -> dict:
     )
 
     raw_text = response.json()["result"]["alternatives"][0]["message"]["text"]
+    return parse_ai_response(raw_text)
 
+def parse_ai_response(raw_text: str) -> dict:
+    """
+    Разбирает сырой текст ответа YandexGPT в dict с ключами
+    sentiment / suggested_reply / needs_human.
+    Чистая функция: строка на входе → dict на выходе, без сети.
+    При невалидном JSON возвращает заглушку с needs_human=True.
+    """
     try:
         raw_text = raw_text.strip()
         if raw_text.startswith("```"):
@@ -66,12 +74,10 @@ def analyze_feedback(feedback: dict) -> dict:
             raw_text = raw_text.strip()
         result = json.loads(raw_text)
     except json.JSONDecodeError:
-        # JSON не распарсился — возвращаем заглушку
-        # чтобы программа не упала
         result = {
             "sentiment": "neutral",
-            "suggested_reply": raw_text,  # отдаём сырой текст
-            "needs_human": True  # помечаем что нужен человек
+            "suggested_reply": raw_text,
+            "needs_human": True
         }
 
     return result
