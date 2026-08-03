@@ -13,8 +13,16 @@ YandexGPT в dict. Никакой сети: подаём строку, пров�
 
 Запуск (из папки reviews_bot):  python -m pytest -v
 """
-from ai.generator import parse_ai_response
+from ai.generator import parse_ai_response, analyze_feedback
 
+class FakeResponse:
+    """Подделка под объект, который возвращает requests.post.
+    Нужен только метод .json() с той же структурой, что у YandexGPT."""
+    def __init__(self, text):
+        self._text = text
+
+    def json(self):
+        return {"result": {"alternatives": [{"message": {"text": self._text}}]}}
 
 # --- Ветка 1: чистый JSON --------------------------------------------------
 # Самый обычный случай — модель вернула ровно JSON, без обёрток.
@@ -77,3 +85,31 @@ def test_fallback_has_all_three_keys():
     иначе код ниже по пайплайну (save_response) упадёт на result['sentiment']."""
     result = parse_ai_response("не json вовсе")
     assert set(result.keys()) == {"sentiment", "suggested_reply", "needs_human"}
+
+def test_analyze_feedback_parses_model_reply(monkeypatch):
+    fake_json = '{"sentiment": "positive", "suggested_reply": "Спасибо!", "needs_human": false}'
+    def fake_post(*args, **kwargs):
+        return FakeResponse(fake_json)
+    monkeypatch.setattr("ai.generator.requests.post", fake_post)
+    feedback = {
+        "productDetails": {"productName": "Товар"},
+        "productValuation": 5,
+        "text": "Отлично!"
+    }
+    result = analyze_feedback(feedback)
+    assert result['sentiment'] == "positive"
+    assert result['needs_human'] is False
+
+def test_analyze_feedback_falls_back_on_garbage(monkeypatch):
+    def fake_post(*args, **kwargs):
+        return FakeResponse("не json вовсе")
+    monkeypatch.setattr("ai.generator.requests.post", fake_post)
+    feedback = {
+        "productDetails": {"productName": "Товар"},
+        "productValuation": 5,
+        "text": "Отлично!"
+    }
+    result = analyze_feedback(feedback)
+    assert result['sentiment'] == "neutral"
+    assert result['needs_human'] is True
+    assert result['suggested_reply'] == "не json вовсе"
