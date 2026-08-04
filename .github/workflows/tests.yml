@@ -1,0 +1,39 @@
+name: tests
+
+# Когда запускать робота: на каждый push и на каждый pull request.
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest   # GitHub поднимет чистую виртуалку с Linux
+
+    env:
+      # db/database.py при импорте делает create_engine(DATABASE_URL).
+      # На CI нет .env, а create_engine(None) падает с ArgumentError и
+      # уронил бы весь прогон ещё до тестов. Даём фиктивный, но валидный URL:
+      # create_engine ЛЕНИВЫЙ — в базу он не ходит, а тесты всё равно
+      # подменяют SessionLocal на in-memory SQLite (фикстура db_session).
+      DATABASE_URL: "sqlite://"
+
+    steps:
+      # 1. Скачать твой код в виртуалку.
+      - uses: actions/checkout@v4
+
+      # 2. Поставить Python той же версии, что у тебя локально.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # 3. Установить зависимости проекта.
+      - name: Install dependencies
+        run: pip install -r reviews_bot/requirements.txt
+
+      # 4. Запустить тесты — из папки reviews_bot, как ты это делаешь сам.
+      #    working-directory говорит «выполни шаг именно здесь», чтобы pytest
+      #    нашёл conftest.py и корректно собрал пути импорта.
+      - name: Run tests
+        working-directory: reviews_bot
+        run: python -m pytest -v
