@@ -1,5 +1,5 @@
 from db.database import SessionLocal
-from db.models import Review, Response
+from db.models import Review, Response, ResponseStatus
 from datetime import datetime
 
 def save_feedbacks(feedbacks: list[dict]) -> int:
@@ -82,13 +82,13 @@ def get_pending_responses() -> list:
     session = SessionLocal()
     try:
         results = (
-            session.query(Review, Response).join(Response, Response.review_id == Review.id).filter(Response.status == "pending").all()
+            session.query(Review, Response).join(Response, Response.review_id == Review.id).filter(Response.status == ResponseStatus.PENDING).all()
         )
         return results
     finally:
         session.close()
 
-def set_status(review_id: int, status: str) -> None:
+def set_status(review_id: int, status: ResponseStatus) -> None:
     """
     Универсальная замена mark_published - ставит любой статус.
     """

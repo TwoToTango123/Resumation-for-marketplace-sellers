@@ -5,6 +5,7 @@ from db.crud import get_pending_responses, set_status, get_publish_data
 from publisher.wb_publisher import publish_reply
 from bot.ui import format_review_card, moderation_keyboard
 import asyncio
+from db.models import ResponseStatus
 
 router = Router()
 
@@ -30,19 +31,19 @@ async def on_publish(callback: CallbackQuery):
     else:
         external_id, suggested_reply = data
     await callback.answer()
-    set_status(review_id, "publishing")
+    set_status(review_id, ResponseStatus.PUBLISHING)
     ok = await asyncio.to_thread(publish_reply, external_id, suggested_reply)
     if ok:
-        set_status(review_id, "published")
+        set_status(review_id, ResponseStatus.PUBLISHED)
         await callback.message.edit_text("✅Опубликовано на WB")
     else:
-        set_status(review_id, "failed")
+        set_status(review_id, ResponseStatus.FAILED)
         await callback.message.edit_text("❌Не удалось опубликовать на WB")
 
 
 @router.callback_query(F.data.startswith("skip:"))
 async def on_skip(callback: CallbackQuery):
     review_id = int(callback.data.split(":")[1])
-    set_status(review_id, "skipped")
+    set_status(review_id, ResponseStatus.SKIPPED)
     await callback.message.edit_text("Ответ пропущен")
     await callback.answer()

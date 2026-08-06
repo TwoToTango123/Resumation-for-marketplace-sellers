@@ -1,6 +1,14 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.sql import func
 from db.database import Base
+from enum import Enum
+
+class ResponseStatus(str, Enum):
+    PENDING = "pending"
+    PUBLISHING = "publishing"
+    PUBLISHED = "published"
+    FAILED = "failed"
+    SKIPPED = "skipped"
 
 class Review(Base):
     __tablename__ = "reviews"
@@ -20,4 +28,4 @@ class Response(Base):
     sentiment = Column(String, nullable = False)
     suggested_reply = Column(Text)
     needs_human = Column(Boolean, nullable = False)
-    status = Column(String, nullable = False, default = "pending")
+    status = Column(String, nullable = False, default = ResponseStatus.PENDING)
