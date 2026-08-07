@@ -1,3 +1,8 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def publish_reply(external_id: str, text: str) -> bool:
     """
     Публикует ответ на отзыв в WB.
@@ -9,8 +14,12 @@ def publish_reply(external_id: str, text: str) -> bool:
     asyncio.to_thread(), иначе повесишь event loop.
     """
     try:
-        print(f"Публикую ответ на отзыв {external_id}: {text}")
+        # %s-аргументы, а не f-строка: logging подставит их ЛЕНИВО — только
+        # если этот уровень включён. Идиома логирования.
+        logger.info("Публикую ответ на отзыв %s: %s", external_id, text)
         return True
     except Exception as e:
-        print(f"Ошибка публикации: {e}")
+        # .error — уровень для сбоев. (Есть ещё logger.exception — то же самое,
+        # но добавит трейсбек; удобно внутри except.)
+        logger.error("Ошибка публикации отзыва %s: %s", external_id, e)
         return False

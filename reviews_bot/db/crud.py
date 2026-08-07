@@ -1,5 +1,5 @@
 from db.database import SessionLocal
-from db.models import Review, Response, ResponseStatus
+from db.models import Review, Response, ResponseStatus, ReviewStatus
 from datetime import datetime
 
 def save_feedbacks(feedbacks: list[dict]) -> int:
@@ -40,7 +40,7 @@ def get_new_reviews() -> list[Review]:
     """
     session = SessionLocal()
     try:
-        new_reviews = session.query(Review).filter(Review.status == 'new').all()
+        new_reviews = session.query(Review).filter(Review.status == ReviewStatus.NEW).all()
         return new_reviews
     finally:
         session.close()
@@ -70,7 +70,7 @@ def mark_processed(review_id: int) -> None:
     try:
         review = session.query(Review).filter(Review.id == review_id).first()
         if review:
-            review.status = 'processed'
+            review.status = ReviewStatus.PROCESSED
             session.commit()
     finally:
         session.close()

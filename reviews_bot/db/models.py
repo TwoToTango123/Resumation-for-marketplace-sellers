@@ -10,6 +10,10 @@ class ResponseStatus(str, Enum):
     FAILED = "failed"
     SKIPPED = "skipped"
 
+class ReviewStatus(str, Enum):
+    NEW = "new"
+    PROCESSED = "processed"
+    
 class Review(Base):
     __tablename__ = "reviews"
 
@@ -20,7 +24,7 @@ class Review(Base):
     rating = Column(Integer, nullable = False)
     text = Column(Text)
     created_at = Column(DateTime(timezone = True), server_default = func.now())
-    status = Column(String, nullable = False, default = "new")
+    status = Column(String, nullable = False, default = ReviewStatus.NEW)
 
 class Response(Base):
     __tablename__ = "responses"

@@ -2,6 +2,9 @@ import asyncio, os
 from aiogram import Bot
 from dotenv import load_dotenv
 from bot.ui import format_review_card, moderation_keyboard
+import logging
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -16,13 +19,13 @@ async def _send_all(items: list) -> None:
                 keyboard = moderation_keyboard(review.id)
                 await bot.send_message(chat_id = chat_id, text = text, reply_markup = keyboard)
             except Exception as e:
-                print(f"Ошибка отправки отзыва {review.id}: {e}")
+                logger.error("Ошибка отправки отзыва %s: %s", review.id, e)
     finally:
         await bot.session.close()
 
 def notify_new_responses(items: list) -> None:
     """Синхронная обертка - ее зовет pipeline."""
     if not items:
-        print("Нет новых ответов для отправки")
+        logger.info("Нет новых ответов для отправки")
         return
     asyncio.run(_send_all(items))
