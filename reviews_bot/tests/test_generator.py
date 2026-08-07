@@ -13,16 +13,25 @@ YandexGPT в dict. Никакой сети: подаём строку, пров�
 
 Запуск (из папки reviews_bot):  python -m pytest -v
 """
+import requests
 from ai.generator import parse_ai_response, analyze_feedback
 
 class FakeResponse:
     """Подделка под объект, который возвращает requests.post.
-    Нужен только метод .json() с той же структурой, что у YandexGPT."""
-    def __init__(self, text):
+    Реализует ровно те методы, что вызывает analyze_feedback: .json() и
+    .raise_for_status(). Если передать error — raise_for_status его бросит
+    (имитация ответа 4xx/5xx)."""
+    def __init__(self, text="", error=None):
         self._text = text
+        self._error = error
 
     def json(self):
         return {"result": {"alternatives": [{"message": {"text": self._text}}]}}
+
+    def raise_for_status(self):
+        # Настоящий requests: на 2xx молчит, на 4xx/5xx кидает HTTPError.
+        if self._error is not None:
+            raise self._error
 
 # --- Ветка 1: чистый JSON --------------------------------------------------
 # Самый обычный случай — модель вернула ровно JSON, без обёрток.
@@ -113,3 +122,35 @@ def test_analyze_feedback_falls_back_on_garbage(monkeypatch):
     assert result['sentiment'] == "neutral"
     assert result['needs_human'] is True
     assert result['suggested_reply'] == "не json вовсе"
+
+def test_analyze_feedback_falls_back_on_http_error(monkeypatch):
+    """YandexGPT вернул 4xx/5xx → raise_for_status кинет HTTPError →
+    analyze_feedback ловит и отдаёт безопасную заглушку, НЕ падает."""
+    # FakeResponse с error: её raise_for_status() бросит HTTPError.
+    def fake_post(*args, **kwargs):
+        return FakeResponse(error=requests.exceptions.HTTPError("429 Too Many Requests"))
+    monkeypatch.setattr("ai.generator.requests.post", fake_post)
+    feedback = {
+        "productDetails": {"productName": "Товар"},
+        "productValuation": 5,
+        "text": "Отлично!"
+    }
+    result = analyze_feedback(feedback)
+    # Главное: не исключение, а заглушка с needs_human=True (отзыв → к человеку).
+    assert result['needs_human'] is True
+    assert result['sentiment'] == "neutral"
+
+def test_analyze_feedback_falls_back_on_network_error(monkeypatch):
+    """Сеть упала → requests.post кинет RequestException →
+    analyze_feedback ловит и отдаёт безопасную заглушку, НЕ падает."""
+    def fake_post(*args, **kwargs):
+        raise requests.exceptions.ConnectionError("Сеть недоступна")
+    monkeypatch.setattr("ai.generator.requests.post", fake_post)
+    feedback = {
+        "productDetails": {"productName": "Товар"},
+        "productValuation": 5,
+        "text": "Отлично!"
+    }
+    result = analyze_feedback(feedback)
+    assert result['needs_human'] is True
+    assert result['sentiment'] == "neutral"

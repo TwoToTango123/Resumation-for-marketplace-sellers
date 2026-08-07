@@ -2,6 +2,9 @@ import requests
 import os
 import json
 from dotenv import load_dotenv
+import logging
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -36,26 +39,31 @@ def analyze_feedback(feedback: dict) -> dict:
     Оценка: {feedback['productValuation']} из 5
     Отзыв: {feedback['text']}"""
 
-    response = requests.post(
-        YANDEX_API_URL,
-        headers = {
-            "Authorization": f"Api-Key {YANDEX_API_KEY}",
-            "Content-Type": "application/json"
-        },
-        json = {
-            "modelUri": f"gpt://{YANDEX_FOLDER_ID}/yandexgpt/latest",
-            "completionOptions": {
-                "temperature": 0.3,
-                "maxTokens": 500
+    try:
+        response = requests.post(
+            YANDEX_API_URL,
+            headers = {
+                "Authorization": f"Api-Key {YANDEX_API_KEY}",
+                "Content-Type": "application/json"
             },
-            "messages": [
-                {"role": "system", "text": system_prompt},
-                {"role": "user", "text": user_prompt}
-            ]
-        }
-    )
-
-    raw_text = response.json()["result"]["alternatives"][0]["message"]["text"]
+            json = {
+                "modelUri": f"gpt://{YANDEX_FOLDER_ID}/yandexgpt/latest",
+                "completionOptions": {
+                    "temperature": 0.3,
+                    "maxTokens": 500
+                },
+                "messages": [
+                    {"role": "system", "text": system_prompt},
+                    {"role": "user", "text": user_prompt}
+                ]
+            },
+            timeout = 10
+        )
+        response.raise_for_status()
+        raw_text = response.json()["result"]["alternatives"][0]["message"]["text"]
+    except (requests.exceptions.RequestException, KeyError, IndexError, ValueError) as e:
+        logger.error("Ошибка запроса к YandexGPT: %s", e)
+        return {"sentiment": "neutral", "suggested_reply": "", "needs_human": True}
     return parse_ai_response(raw_text)
 
 def parse_ai_response(raw_text: str) -> dict:
