@@ -25,6 +25,7 @@ class Review(Base):
     text = Column(Text)
     created_at = Column(DateTime(timezone = True), server_default = func.now())
     status = Column(String, nullable = False, default = ReviewStatus.NEW)
+    priority = Column(Integer, nullable = True)
 
 class Response(Base):
     __tablename__ = "responses"
