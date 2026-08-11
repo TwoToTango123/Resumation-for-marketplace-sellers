@@ -13,7 +13,21 @@ class ResponseStatus(str, Enum):
 class ReviewStatus(str, Enum):
     NEW = "new"
     PROCESSED = "processed"
-    
+
+class SubscriptionStatus(str, Enum):
+    TRIAL = "trial"
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+class Seller(Base):
+    __tablename__ = "sellers"
+
+    id = Column(Integer, primary_key = True)
+    chat_id = Column(String, unique = True, nullable = False)
+    brand_name = Column(String, nullable = False)
+    subscription_status = Column(String, nullable = False, default = SubscriptionStatus.TRIAL)
+    created_at = Column(DateTime(timezone = True), server_default = func.now())
+
 class Review(Base):
     __tablename__ = "reviews"
 
@@ -26,6 +40,7 @@ class Review(Base):
     created_at = Column(DateTime(timezone = True), server_default = func.now())
     status = Column(String, nullable = False, default = ReviewStatus.NEW)
     priority = Column(Integer, nullable = True)
+    seller_id = Column(Integer, ForeignKey("sellers.id"), nullable = True)
 
 class Response(Base):
     __tablename__ = "responses"
