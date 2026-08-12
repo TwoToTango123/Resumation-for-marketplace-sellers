@@ -38,7 +38,10 @@ def db_session(monkeypatch):
     # Создаём все таблицы (reviews, responses) в этой пустой базе.
     Base.metadata.create_all(engine)
 
-    TestSessionLocal = sessionmaker(bind=engine)
+    # expire_on_commit=False — зеркалим боевой SessionLocal из db/database.py,
+    # иначе тест не отражал бы реальное поведение (после commit объект отдаётся
+    # наружу и читается уже без сессии).
+    TestSessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
     # Вот та самая подмена. crud.py достаёт SessionLocal из своего неймспейса,
     # поэтому патчим db.crud.SessionLocal — там, где им ПОЛЬЗУЮТСЯ.

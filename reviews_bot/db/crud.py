@@ -1,5 +1,5 @@
 from db.database import SessionLocal
-from db.models import Review, Response, ResponseStatus, ReviewStatus
+from db.models import Review, Response, ResponseStatus, ReviewStatus, Seller
 from datetime import datetime
 
 def save_feedbacks(feedbacks: list[dict]) -> int:
@@ -121,3 +121,23 @@ def get_publish_data(review_id: int) -> tuple[str, str] | None:
             return None
     finally:
         session.close()
+
+def get_or_create_seller(chat_id: str, brand_name: str) -> tuple[Seller, bool]:
+    """
+    Ищет селлера по chat_id.
+    Есть  → возвращает (seller, False).
+    Нет   → создаёт с brand_name, возвращает (seller, True).
+    """
+    session = SessionLocal()
+    try:
+        seller = session.query(Seller).filter(Seller.chat_id == chat_id).first()
+        if seller:
+            return seller, False
+        else:
+            new_seller = Seller(chat_id=chat_id, brand_name=brand_name)
+            session.add(new_seller)
+            session.commit()
+            return new_seller, True
+    finally:
+        session.close()
+    

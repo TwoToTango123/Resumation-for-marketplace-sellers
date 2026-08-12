@@ -51,4 +51,16 @@ def test_set_status_removes_from_pending(db_session):
     assert len(crud.get_pending_responses()) == 1
     crud.set_status(review.id, "published")
     assert len(crud.get_pending_responses()) == 0
-    
+
+
+def test_get_or_create_seller_creates_new(db_session):
+    seller, created = crud.get_or_create_seller("12345", "Мой бренд")
+    assert created is True
+    assert seller.brand_name == "Мой бренд"
+
+
+def test_get_or_create_seller_returns_existing(db_session):
+    crud.get_or_create_seller("12345", "Мой бренд")           # первый раз — создали
+    seller, created = crud.get_or_create_seller("12345", "Другое имя")  # тот же chat_id
+    assert created is False                                    # не создали заново
+    assert seller.brand_name == "Мой бренд"                    # бренд не перезаписан
